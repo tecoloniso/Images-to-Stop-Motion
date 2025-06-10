@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Creador de Stop Motion</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        #preview { width: 100%; margin-top: 20px; }
+        #progress { margin-top: 10px; }
+        #console { 
+            background: #f0f0f0; 
+            padding: 10px; 
+            height: 200px; 
+            overflow-y: scroll; 
+            margin-top: 20px; 
+            font-family: monospace; 
+            white-space: pre-wrap;
+        }
+        button { padding: 10px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:disabled { background: #cccccc; }
+        .warning { color: #ff9800; }
+        .error { color: #f44336; }
+        .success { color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <h1>Creador de Video Stop Motion</h1>
+    
+    <div>
+        <label for="fps">Fotogramas por segundo (FPS):</label>
+        <input type="number" id="fps" value="12" min="1" max="60">
+    </div>
+    
+    <div>
+        <input type="file" id="imageInput" accept="image/*" multiple>
+        <button id="createBtn" disabled>Crear Video</button>
+    </div>
+    
+    <div id="progress" style="display: none;">
+        Procesando: <span id="progressText">0%</span>
+    </div>
+    
+    <div id="console"></div>
+    
+    <video id="preview" controls style="display: none;"></video>
+    
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const createBtn = document.getElementById('createBtn');
+        const fpsInput = document.getElementById('fps');
+        const preview = document.getElementById('preview');
+        const progress = document.getElementById('progress');
+        const progressText = document.getElementById('progressText');
+        const consoleOutput = document.getElementById('console');
+        
+        function logToConsole(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = message;
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        let images = [];
+        
+        imageInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                images = Array.from(e.target.files);
+                logToConsole(`Seleccionadas ${images.length} imágenes`, 'success');
+                createBtn.disabled = false;
+            } else {
+                createBtn.disabled = true;
+            }
+        });
+        
+        createBtn.addEventListener('click', async function() {
+            if (images.length === 0) {
+                logToConsole('No hay imágenes seleccionadas', 'error');
+                return;
+            }
+            
+            const fps = parseInt(fpsInput.value);
+            if (isNaN(fps) || fps <= 0) {
+                logToConsole('Por favor ingresa un valor válido para FPS', 'error');
+                return;
+            }
+            
+            progress.style.display = 'block';
+            preview.style.display = 'none';
+            consoleOutput.innerHTML = '';
+            
+            try {
+                logToConsole('Ordenando imágenes por fecha de captura...');
+                
+                // Procesar imágenes y obtener fechas
+                const imagesWithDates = [];
+                let imagesWithoutDate = 0;
+                
+                for (const file of images) {
+                    try {
+                        const date = await getImageDate(file);
+                        if (date) {
+                            imagesWithDates.push({ file, date });
+                        } else {
+                            imagesWithDates.push({ file, date: new Date(0) }); // Fecha mínima si no hay EXIF
+                            imagesWithoutDate++;
+                        }
+                    } catch (error) {
+                        logToConsole(`Error procesando ${file.name}: ${error.message}`, 'error');
+                        imagesWithDates.push({ file, date: new Date(0) });
+                        imagesWithoutDate++;
+                    }
+                }
+                
+                // Ordenar por fecha
+                imagesWithDates.sort((a, b) => a.date - b.date);
+                const sortedImages = imagesWithDates.map(img => img.file);
+                
+                if (imagesWithoutDate > 0) {
+                    logToConsole(`Advertencia: ${imagesWithoutDate} imágenes no tenían fecha EXIF y se ordenarán primero`, 'warning');
+                }
+                
+                logToConsole(`Se procesarán ${sortedImages.length} imágenes:`, 'success');
+                sortedImages.forEach((img, index) => {
+                    logToConsole(`${index + 1}. ${img.name}`);
+                });
+                
+                if (sortedImages.length === 0) {
+                    logToConsole('No hay imágenes válidas para procesar', 'error');
+                    progress.style.display = 'none';
+                    return;
+                }
+                
+                // Crear el video
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Cargar la primera imagen para dimensiones
+                const firstImage = await loadImage(sortedImages[0]);
+                canvas.width = firstImage.width;
+                canvas.height = firstImage.height;
+                
+                const stream = canvas.captureStream();
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                
+                const chunks = [];
+                mediaRecorder.ondataavailable = function(e) {
+                    chunks.push(e.data);
+                };
+                
+                mediaRecorder.onstop = function() {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const videoUrl = URL.createObjectURL(blob);
+                    preview.src = videoUrl;
+                    preview.style.display = 'block';
+                    progress.style.display = 'none';
+                    logToConsole('¡Video completado!', 'success');
+                };
+                
+                mediaRecorder.start();
+                
+                const delay = 1000 / fps;
+                
+                for (let i = 0; i < sortedImages.length; i++) {
+                    const imageFile = sortedImages[i];
+                    logToConsole(`Procesando: ${imageFile.name} (${i + 1}/${sortedImages.length})`);
+                    
+                    try {
+                        const img = await loadImage(imageFile);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        const percent = Math.round(((i + 1) / sortedImages.length) * 100);
+                        progressText.textContent = `${percent}%`;
+                        
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } catch (error) {
+                        logToConsole(`Error al procesar ${imageFile.name}: ${error.message}`, 'error');
+                    }
+                }
+                
+                mediaRecorder.stop();
+            } catch (error) {
+                logToConsole(`Error crítico: ${error.message}`, 'error');
+                progress.style.display = 'none';
+            }
+        });
+        
+        async function getImageDate(file) {
+            try {
+                const exifData = await readExifData(file);
+                if (exifData && exifData.DateTimeOriginal) {
+                    // Formato EXIF: "YYYY:MM:DD HH:MM:SS"
+                    const dateStr = exifData.DateTimeOriginal;
+                    const [datePart, timePart] = dateStr.split(' ');
+                    const [year, month, day] = datePart.split(':');
+                    const [hour, minute, second] = timePart.split(':');
+                    
+                    return new Date(year, month-1, day, hour, minute, second);
+                }
+                return null;
+            } catch (e) {
+                console.error(`Error leyendo EXIF de ${file.name}:`, e);
+                return null;
+            }
+        }
+        
+        function readExifData(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const view = new DataView(e.target.result);
+                        if (view.getUint16(0, false) !== 0xFFD8) {
+                            return resolve(null); // No es JPEG
+                        }
+                        
+                        const length = view.byteLength;
+                        let offset = 2;
+                        
+                        while (offset < length) {
+                            const marker = view.getUint16(offset, false);
+                            offset += 2;
+                            
+                            if (marker === 0xFFE1) { // EXIF marker
+                                if (view.getUint32(offset + 2, false) !== 0x45786966) {
+                                    return resolve(null); // No es EXIF
+                                }
+                                
+                                const little = view.getUint16(offset + 6, false) === 0x4949;
+                                offset += view.getUint32(offset + 4, little);
+                                const exifData = { DateTimeOriginal: null };
+                                
+                                if (view.getUint16(offset, little) !== 0x8769) {
+                                    return resolve(null); // No es IFD0
+                                }
+                                
+                                const tiffOffset = view.getUint32(offset + 2, little);
+                                offset += tiffOffset;
+                                
+                                const entries = view.getUint16(offset, little);
+                                offset += 2;
+                                
+                                for (let i = 0; i < entries; i++) {
+                                    const tag = view.getUint16(offset, little);
+                                    offset += 2;
+                                    const type = view.getUint16(offset, little);
+                                    offset += 2;
+                                    const numValues = view.getUint32(offset, little);
+                                    offset += 4;
+                                    const valueOffset = view.getUint32(offset, little);
+                                    offset += 4;
+                                    
+                                    if (tag === 0x9003) { // DateTimeOriginal
+                                        const strOffset = offset - 4 + valueOffset;
+                                        let str = '';
+                                        for (let c = 0; c < 20; c++) {
+                                            const char = view.getUint8(strOffset + c);
+                                            if (char === 0) break;
+                                            str += String.fromCharCode(char);
+                                        }
+                                        exifData.DateTimeOriginal = str;
+                                        break; // Solo necesitamos esta etiqueta
+                                    }
+                                }
+                                
+                                return resolve(exifData);
+                            } else {
+                                offset += view.getUint16(offset, false);
+                            }
+                        }
+                    } catch (e) {
+                        return reject(e);
+                    }
+                    return resolve(null);
+                };
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file.slice(0, 128 * 1024)); // Leer solo el inicio del archivo
+            });
+        }
+        
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(img);
+                };
+                img.onerror = (err) => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error(`Error al cargar imagen ${file.name}`));
+                };
+                img.src = url;
+            });
+        }
+    </script>
+</body>
+</html>
