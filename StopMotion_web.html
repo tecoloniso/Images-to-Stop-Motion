@@ -1,122 +1,354 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Creador de Stop Motion Avanzado</title>
+    <title>Video Stop Motion - Crea tu Animación</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
-        #preview { width: 100%; margin-top: 20px; }
-        #progress { margin-top: 10px; }
-        #console { 
-            background: #f0f0f0; 
-            padding: 10px; 
-            height: 200px; 
-            overflow-y: scroll; 
-            margin-top: 20px; 
-            font-family: monospace; 
-            white-space: pre-wrap;
+        :root {
+            --primary-color: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary-color: #2196F3;
+            --secondary-dark: #1976D2;
+            --bg-light: #f8f9fa;
+            --bg-dark: #e9ecef;
+            --text-dark: #343a40;
+            --text-light: #ffffff;
+            --border-color: #ced4da;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
         }
-        button { padding: 8px 12px; background: #4CAF50; color: white; border: none; cursor: pointer; margin: 2px; }
-        button:disabled { background: #cccccc; }
-        .warning { color: #ff9800; }
-        .error { color: #f44336; }
-        .success { color: #4CAF50; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .card {
+            background: var(--text-light);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            margin-right: 5px;
+            color: var(--text-dark);
+        }
+
+        .input-group input[type="number"],
+        .input-group input[type="file"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .input-group input[type="file"] {
+            cursor: pointer;
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+        .input-group input[type="file"]::-webkit-file-upload-button {
+            background-color: var(--secondary-color);
+            color: var(--text-light);
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 15px;
+            transition: background-color 0.3s ease;
+        }
+        .input-group input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: var(--secondary-dark);
+        }
+
+        /* Nuevo estilo para centrar el botón */
+        .card-button-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column; /* Para que el progreso quede debajo */
+            gap: 15px; /* Espacio entre el botón y el progreso */
+        }
+
+        button {
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: var(--text-light);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        button:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message-box {
+            background-color: #e6f7ff; /* Light blue */
+            border: 1px solid #91d5ff; /* Darker blue */
+            color: #0056b3; /* Even darker blue */
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
         .thumbnail-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
             margin-top: 15px;
+            min-height: 150px; /* Asegura un espacio visible incluso sin fotos */
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            justify-content: center; /* Centra las miniaturas */
+            align-items: center;
         }
+
         .thumbnail-item {
             position: relative;
-            width: 120px;
-            height: 120px;
+            width: 160px; /* Un poco más grande */
+            height: 160px; /* Un poco más grande */
             border: 1px solid #ddd;
-            padding: 5px;
+            padding: 8px;
             background: #f9f9f9;
-            transition: all 0.3s ease;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         .thumbnail-item:hover {
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
+        .thumbnail-item.dragging {
+            opacity: 0.5;
+            border: 2px dashed var(--secondary-color);
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+            transform: scale(1.05);
+        }
+        .thumbnail-item.drag-over {
+            border: 2px dashed var(--secondary-color);
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+        
         .thumbnail-img {
             width: 100%;
-            height: 80px;
+            height: 120px; /* Ajustado para ser más grande */
             object-fit: contain;
+            border-radius: 4px;
+            margin-bottom: 5px;
         }
         .thumbnail-name {
-            font-size: 11px;
+            font-size: 12px; /* Ligeramente más grande */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-top: 3px;
+            width: 100%;
             text-align: center;
+            color: #555;
+            flex-shrink: 0;
+            padding-top: 3px; /* Espacio entre imagen y nombre */
         }
+        /* Eliminamos .date-info */
+
         .delete-btn {
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -10px;
+            right: -10px;
             background: #f44336;
             color: white;
             border: none;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 14px;
+            width: 28px;
+            height: 28px;
+            font-size: 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             transition: all 0.2s ease;
+            z-index: 10;
         }
         .delete-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
             background: #d32f2f;
         }
-        .download-options {
-            margin-top: 15px;
+
+        #progress {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        #downloadOptions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
             display: none;
         }
-        .format-btn {
-            background: #2196F3;
+        #downloadWebm {
+            background: var(--secondary-color);
         }
-        .date-info {
-            font-size: 10px;
-            color: #666;
-            text-align: center;
-            margin-top: 2px;
+        #downloadWebm:hover:not(:disabled) {
+            background: var(--secondary-dark);
+        }
+
+        #conversionMessage {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #e0f2f7;
+            border: 1px solid #b3e5fc;
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+            color: #0056b3;
+        }
+        #conversionMessage a {
+            color: #0288d1;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        #conversionMessage a:hover {
+            text-decoration: underline;
+        }
+
+        #console {
+            background: #343a40;
+            color: #e0e0e0;
+            padding: 15px;
+            height: 250px;
+            overflow-y: scroll;
+            margin-top: 30px;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            border-radius: var(--border-radius);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #console div {
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+        #console .info { color: #f8f9fa; }
+        #console .warning { color: #ffeb3b; }
+        #console .error { color: #ff7675; }
+        #console .success { color: #8bc34a; }
+
+        #preview {
+            width: 100%;
+            max-height: 450px;
+            background-color: #000;
+            border-radius: var(--border-radius);
+            margin-top: 25px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-group input[type="file"] {
+                width: 100%;
+            }
+            .input-group input[type="file"]::-webkit-file-upload-button {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Creador de Video Stop Motion</h1>
-    
-    <div>
-        <label for="fps">Fotogramas por segundo (FPS):</label>
-        <input type="number" id="fps" value="12" min="1" max="60">
+    <h1>🎬 Creador de Video Stop Motion</h1>
+
+    <div class="card">
+        <h2>Paso 1: Configura y Sube tus Fotos</h2>
+        <div class="input-group">
+            <label for="fps">Fotogramas por segundo (FPS):</label>
+            <input type="number" id="fps" value="12" min="1" max="60">
+            <input type="file" id="imageInput" accept="image/*" multiple>
+        </div>
+        <div class="message-box">
+            ✨ ¡Arrastra y suelta las fotos en el contenedor de abajo para **reordenarlas manualmente**! La imagen que sueltes sobre otra se colocará *detrás* de la que ya estaba. También puedes eliminarlas haciendo clic en la "X".
+        </div>
     </div>
-    
-    <div>
-        <input type="file" id="imageInput" accept="image/*" multiple>
-        <button id="createBtn" disabled>Crear Video</button>
+
+    <div class="card">
+        <h2>Paso 2: Organiza tus Imágenes</h2>
+        <div id="thumbnailContainer" class="thumbnail-container">
+            <p style="color: #6c757d;">Arrastra tus imágenes aquí o súbelas usando el botón de arriba.</p>
+        </div>
     </div>
-    
-    <div id="thumbnailContainer" class="thumbnail-container"></div>
-    
-    <div id="progress" style="display: none;">
-        Procesando: <span id="progressText">0%</span>
+
+    <div class="card">
+        <h2>Paso 3: Crea tu Video</h2>
+        <div class="card-button-center"> <button id="createBtn" disabled>Generar Video</button>
+            <div id="progress" style="display: none;">
+                Procesando: <span id="progressText">0%</span>
+            </div>
+        </div>
     </div>
-    
-    <div id="downloadOptions" class="download-options">
-        <h3>Descargar video en:</h3>
-        <button id="downloadMp4" class="format-btn">MP4</button>
-        <button id="downloadWebm" class="format-btn">WEBM</button>
-        <button id="downloadGif" class="format-btn">GIF</button>
+
+    <div class="card" id="videoOutputSection" style="display:none;">
+        <h2>Paso 4: Previsualiza y Descarga</h2>
+        <video id="preview" controls></video>
+        <div id="downloadOptions" class="download-options">
+            <button id="downloadWebm" class="format-btn">Descargar WEBM</button>
+            <div id="conversionMessage">
+                ¿Necesitas MP4 o GIF? Puedes convertir tu archivo WEBM fácilmente usando una herramienta como 
+                <a href="https://cloudconvert.com/webm-to-mp4" target="_blank" rel="noopener noreferrer">CloudConvert</a>. 
+                Simplemente sube el archivo WEBM que descargaste y elige el formato de salida.
+            </div>
+        </div>
     </div>
-    
-    <div id="console"></div>
-    
-    <video id="preview" controls style="display: none;"></video>
+
+    <div class="card">
+        <h2>Registro de Actividad</h2>
+        <div id="console"></div>
+    </div>
     
     <script>
         const imageInput = document.getElementById('imageInput');
@@ -128,14 +360,14 @@
         const consoleOutput = document.getElementById('console');
         const thumbnailContainer = document.getElementById('thumbnailContainer');
         const downloadOptions = document.getElementById('downloadOptions');
-        const downloadMp4 = document.getElementById('downloadMp4');
         const downloadWebm = document.getElementById('downloadWebm');
-        const downloadGif = document.getElementById('downloadGif');
-        
-        let images = [];
-        let sortedImagesWithDates = [];
-        let videoBlob = null;
-        
+        const videoOutputSection = document.getElementById('videoOutputSection'); // Nueva sección
+
+        let images = []; // Almacena los objetos File originales
+        let currentDraggedItem = null; // Para el elemento que se está arrastrando
+        let videoBlob = null; // Para almacenar el Blob del video WEBM generado
+        let lastImageOrderHash = ''; // Para proteger el botón de crear video
+
         function logToConsole(message, type = 'info') {
             const div = document.createElement('div');
             div.className = type;
@@ -144,16 +376,37 @@
             consoleOutput.scrollTop = consoleOutput.scrollHeight;
         }
         
+        function calculateImageOrderHash() {
+            // Crea un hash simple basado en los nombres de archivo y su orden
+            return images.map(file => file.name).join('|');
+        }
+
+        function updateCreateButtonState() {
+            const currentHash = calculateImageOrderHash();
+            if (images.length === 0) {
+                createBtn.disabled = true;
+                logToConsole('No hay imágenes para crear el video.', 'warning');
+            } else if (currentHash === lastImageOrderHash && videoBlob !== null) {
+                // Si el orden de las imágenes no ha cambiado y ya se generó un video
+                createBtn.disabled = true;
+                logToConsole('Orden de imágenes sin cambios. Reordena o añade/elimina para crear un nuevo video.', 'info');
+            } else {
+                createBtn.disabled = false;
+            }
+        }
+
         async function updateThumbnails() {
             thumbnailContainer.innerHTML = '';
+            if (images.length === 0) {
+                thumbnailContainer.innerHTML = '<p style="color: #6c757d;">Arrastra tus imágenes aquí o súbelas usando el botón de arriba.</p>';
+            }
             
-            // Ordenar imágenes por fecha cada vez que se actualizan
-            sortedImagesWithDates = await sortImagesByDate(images);
-            
-            sortedImagesWithDates.forEach((item, index) => {
-                const { file, date } = item;
+            images.forEach((file, index) => {
                 const itemElement = document.createElement('div');
                 itemElement.className = 'thumbnail-item';
+                itemElement.setAttribute('draggable', 'true');
+                itemElement.dataset.index = index;
+                itemElement.dataset.filename = file.name;
                 
                 const img = document.createElement('img');
                 img.className = 'thumbnail-img';
@@ -163,11 +416,14 @@
                 name.className = 'thumbnail-name';
                 name.textContent = file.name;
                 
-                const dateInfo = document.createElement('div');
-                dateInfo.className = 'date-info';
-                dateInfo.textContent = date !== new Date(0) ? 
-                    date.toLocaleDateString() + ' ' + date.toLocaleTimeString() : 
-                    'Sin fecha EXIF';
+                // Eliminamos la sección de la fecha EXIF
+                // const dateInfo = document.createElement('div');
+                // dateInfo.className = 'date-info';
+                // getImageDate(file).then(date => {
+                //     dateInfo.textContent = date ? date.toLocaleDateString() + ' ' + date.toLocaleTimeString() : 'Sin fecha EXIF';
+                // }).catch(() => {
+                //     dateInfo.textContent = 'Sin fecha EXIF';
+                // });
                 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'delete-btn';
@@ -180,78 +436,152 @@
                 itemElement.appendChild(deleteBtn);
                 itemElement.appendChild(img);
                 itemElement.appendChild(name);
-                itemElement.appendChild(dateInfo);
+                // itemElement.appendChild(dateInfo); // Ya no se añade
                 
                 thumbnailContainer.appendChild(itemElement);
             });
+            addDragAndDropListeners();
+            updateCreateButtonState(); // Actualiza el estado del botón después de actualizar las miniaturas
         }
         
-        async function sortImagesByDate(imagesToSort) {
-            const imagesWithDates = [];
-            
-            for (const file of imagesToSort) {
-                try {
-                    const date = await getImageDate(file);
-                    imagesWithDates.push({
-                        file,
-                        date: date || new Date(0) // Usar fecha mínima si no hay EXIF
-                    });
-                } catch (error) {
-                    console.error(`Error procesando ${file.name}:`, error);
-                    imagesWithDates.push({
-                        file,
-                        date: new Date(0) // Fecha mínima si hay error
-                    });
-                }
+        function addDragAndDropListeners() {
+            const items = document.querySelectorAll('.thumbnail-item');
+            items.forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('dragleave', handleDragLeave);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        function handleDragStart(e) {
+            currentDraggedItem = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.index);
+            setTimeout(() => {
+                this.classList.add('dragging');
+            }, 0);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (this !== currentDraggedItem && !this.classList.contains('drag-over')) {
+                this.classList.add('drag-over');
             }
-            
-            // Ordenar por fecha (las más antiguas primero)
-            return imagesWithDates.sort((a, b) => a.date - b.date);
         }
-        
+
+        function handleDragLeave() {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+
+            const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            const droppedIndex = parseInt(this.dataset.index);
+
+            if (draggedIndex === droppedIndex) {
+                return;
+            }
+
+            const [draggedFile] = images.splice(draggedIndex, 1);
+            images.splice(droppedIndex, 0, draggedFile);
+
+            logToConsole(`Imagen "${draggedFile.name}" movida de la posición ${draggedIndex + 1} a la ${droppedIndex + 1}.`, 'info');
+            updateThumbnails();
+            lastImageOrderHash = ''; // Resetear el hash para permitir crear nuevo video
+            updateCreateButtonState();
+        }
+
+        function handleDragEnd() {
+            const items = document.querySelectorAll('.thumbnail-item');
+            items.forEach(item => {
+                item.classList.remove('dragging');
+                item.classList.remove('drag-over');
+            });
+            currentDraggedItem = null;
+        }
+
         async function removeImage(fileToRemove) {
             images = images.filter(file => file !== fileToRemove);
             logToConsole(`Imagen eliminada: ${fileToRemove.name}`);
             await updateThumbnails();
-            createBtn.disabled = images.length === 0;
+            lastImageOrderHash = ''; // Resetear el hash
+            updateCreateButtonState();
         }
         
         imageInput.addEventListener('change', async function(e) {
             if (e.target.files.length > 0) {
-                const newImages = Array.from(e.target.files);
-                images = images.concat(newImages);
-                logToConsole(`Se agregaron ${newImages.length} imágenes. Total: ${images.length}`, 'success');
+                const newFiles = Array.from(e.target.files);
+                const newImagesWithDates = [];
+
+                for (const file of newFiles) {
+                    try {
+                        const date = await getImageDate(file);
+                        newImagesWithDates.push({
+                            file,
+                            date: date || new Date(0)
+                        });
+                    } catch (error) {
+                        console.error(`Error procesando ${file.name}:`, error);
+                        newImagesWithDates.push({
+                            file,
+                            date: new Date(0)
+                        });
+                    }
+                }
+                
+                const currentImagesWithDates = images.map(file => ({ file, date: new Date(0) }));
+                const combinedImagesWithDates = currentImagesWithDates.concat(newImagesWithDates);
+                combinedImagesWithDates.sort((a, b) => a.date - b.date);
+
+                images = combinedImagesWithDates.map(item => item.file);
+                logToConsole(`Se agregaron ${newFiles.length} imágenes. Total: ${images.length}`, 'success');
                 await updateThumbnails();
-                createBtn.disabled = false;
+                lastImageOrderHash = ''; // Resetear el hash
+                updateCreateButtonState();
             }
         });
         
         createBtn.addEventListener('click', async function() {
             if (images.length === 0) {
-                logToConsole('No hay imágenes seleccionadas', 'error');
+                logToConsole('No hay imágenes seleccionadas para crear el video.', 'error');
                 return;
             }
             
             const fps = parseInt(fpsInput.value);
             if (isNaN(fps) || fps <= 0) {
-                logToConsole('Por favor ingresa un valor válido para FPS', 'error');
+                logToConsole('Por favor, introduce un valor válido para FPS (fotogramas por segundo).', 'error');
                 return;
             }
             
+            // Protección: deshabilitar el botón y actualizar el hash para evitar recreación
+            createBtn.disabled = true;
+            lastImageOrderHash = calculateImageOrderHash();
+
             progress.style.display = 'block';
+            videoOutputSection.style.display = 'none'; // Ocultar sección de video mientras se procesa
             preview.style.display = 'none';
             downloadOptions.style.display = 'none';
-            consoleOutput.innerHTML = '';
+            consoleOutput.innerHTML = ''; // Limpiar consola al iniciar
             
+            // Redirigir a la consola
+            document.getElementById('console').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
             try {
-                logToConsole(`Se procesarán ${sortedImagesWithDates.length} imágenes ordenadas por fecha:`, 'success');
+                logToConsole(`Iniciando la generación de video con ${images.length} imágenes a ${fps} FPS...`, 'info');
                 
-                // Crear el video
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Cargar la primera imagen para dimensiones
-                const firstImage = await loadImage(sortedImagesWithDates[0].file);
+                if (images.length === 0) {
+                    throw new Error("No hay imágenes cargadas para crear el video.");
+                }
+
+                const firstImage = await loadImage(images[0]);
                 canvas.width = firstImage.width;
                 canvas.height = firstImage.height;
                 
@@ -267,77 +597,62 @@
                     videoBlob = new Blob(chunks, { type: 'video/webm' });
                     const videoUrl = URL.createObjectURL(videoBlob);
                     preview.src = videoUrl;
-                    preview.style.display = 'block';
+                    
                     progress.style.display = 'none';
+                    videoOutputSection.style.display = 'block'; // Mostrar la sección de video
+                    preview.style.display = 'block';
                     downloadOptions.style.display = 'block';
-                    logToConsole('¡Video completado!', 'success');
+                    logToConsole('✅ ¡Video WEBM generado con éxito! Puedes previsualizarlo y descargarlo.', 'success');
+                    
+                    // Volver a permitir crear video si el orden de fotos cambia
+                    updateCreateButtonState();
                 };
                 
                 mediaRecorder.start();
                 
                 const delay = 1000 / fps;
                 
-                for (let i = 0; i < sortedImagesWithDates.length; i++) {
-                    const { file } = sortedImagesWithDates[i];
-                    logToConsole(`Procesando: ${file.name} (${i + 1}/${sortedImagesWithDates.length})`);
+                for (let i = 0; i < images.length; i++) {
+                    const file = images[i];
+                    logToConsole(`Procesando imagen: ${file.name} (${i + 1}/${images.length})`, 'info');
                     
                     try {
                         const img = await loadImage(file);
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         
-                        const percent = Math.round(((i + 1) / sortedImagesWithDates.length) * 100);
+                        const percent = Math.round(((i + 1) / images.length) * 100);
                         progressText.textContent = `${percent}%`;
                         
+                        // Pequeño retraso para que el navegador procese los fotogramas
                         await new Promise(resolve => setTimeout(resolve, delay));
                     } catch (error) {
-                        logToConsole(`Error al procesar ${file.name}: ${error.message}`, 'error');
+                        logToConsole(`❌ Error al procesar ${file.name}: ${error.message}`, 'error');
+                        // Detener la grabación si hay un error grave en una imagen
+                        if (mediaRecorder.state === 'recording') {
+                             mediaRecorder.stop();
+                        }
+                        progress.style.display = 'none';
+                        createBtn.disabled = false; // Habilitar de nuevo el botón
+                        return; // Salir de la función
                     }
                 }
                 
-                mediaRecorder.stop();
+                mediaRecorder.stop(); // Finalizar la grabación
             } catch (error) {
-                logToConsole(`Error crítico: ${error.message}`, 'error');
+                logToConsole(`❌ Error crítico durante la creación del video: ${error.message}`, 'error');
                 progress.style.display = 'none';
+                createBtn.disabled = false; // Asegurarse de habilitar el botón
             }
-        });
-        
-        // Configurar botones de descarga
-        downloadMp4.addEventListener('click', async () => {
-            if (!videoBlob) return;
-            logToConsole('Convirtiendo a MP4...', 'info');
-            await downloadVideo('mp4');
         });
         
         downloadWebm.addEventListener('click', () => {
-            if (!videoBlob) return;
+            if (!videoBlob) {
+                logToConsole('No hay un video para descargar. Por favor, crea uno primero.', 'warning');
+                return;
+            }
             downloadFile(videoBlob, 'stopmotion.webm');
+            logToConsole('📥 Video WEBM descargado.', 'success');
         });
-        
-        downloadGif.addEventListener('click', async () => {
-            if (!videoBlob) return;
-            logToConsole('Convirtiendo a GIF...', 'info');
-            await convertToGif();
-        });
-        
-        async function downloadVideo(format) {
-            try {
-                logToConsole('Conversión a MP4 no implementada completamente en este ejemplo', 'warning');
-                logToConsole('Descargando versión WEBM en su lugar', 'info');
-                downloadFile(videoBlob, 'stopmotion.webm');
-            } catch (error) {
-                logToConsole(`Error al convertir a MP4: ${error.message}`, 'error');
-            }
-        }
-        
-        async function convertToGif() {
-            try {
-                logToConsole('Conversión a GIF no implementada completamente en este ejemplo', 'warning');
-                logToConsole('Descargando versión WEBM en su lugar', 'info');
-                downloadFile(videoBlob, 'stopmotion.webm');
-            } catch (error) {
-                logToConsole(`Error al convertir a GIF: ${error.message}`, 'error');
-            }
-        }
         
         function downloadFile(blob, filename) {
             const url = URL.createObjectURL(blob);
@@ -352,88 +667,83 @@
             }, 100);
         }
         
+        // --- Funciones auxiliares para EXIF y Carga de Imagen ---
+        // Se ha simplificado la función getImageDate para que no se utilice,
+        // ya que la información de fecha no se muestra en la miniatura.
+        // Sin embargo, se mantiene por si se quisiera reutilizar la lógica de ordenación por fecha.
         async function getImageDate(file) {
-            try {
-                const exifData = await readExifData(file);
-                if (exifData && exifData.DateTimeOriginal) {
-                    const dateStr = exifData.DateTimeOriginal;
-                    const [datePart, timePart] = dateStr.split(' ');
-                    const [year, month, day] = datePart.split(':');
-                    const [hour, minute, second] = timePart.split(':');
-                    return new Date(year, month-1, day, hour, minute, second);
+            return new Promise((resolve) => {
+                // Devolvemos null directamente ya que no se usará la fecha EXIF en la UI
+                // Mantengo el código de lectura EXIF comentado si quisieras habilitarlo de nuevo
+                resolve(null); 
+                /*
+                if (file.type !== 'image/jpeg' && file.type !== 'image/tiff') {
+                    return resolve(null);
                 }
-                return null;
-            } catch (e) {
-                console.error(`Error leyendo EXIF de ${file.name}:`, e);
-                return null;
-            }
-        }
-        
-        function readExifData(file) {
-            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
                         const view = new DataView(e.target.result);
-                        if (view.getUint16(0, false) !== 0xFFD8) return resolve(null);
+                        if (view.getUint16(0, false) !== 0xFFD8) return resolve(null); // No es un JPEG
                         
-                        const length = view.byteLength;
                         let offset = 2;
+                        const length = view.byteLength;
                         
                         while (offset < length) {
                             const marker = view.getUint16(offset, false);
                             offset += 2;
                             
-                            if (marker === 0xFFE1) {
-                                if (view.getUint32(offset + 2, false) !== 0x45786966) return resolve(null);
-                                
-                                const little = view.getUint16(offset + 6, false) === 0x4949;
-                                offset += view.getUint32(offset + 4, little);
-                                const exifData = { DateTimeOriginal: null };
-                                
-                                if (view.getUint16(offset, little) !== 0x8769) return resolve(null);
-                                
-                                const tiffOffset = view.getUint32(offset + 2, little);
-                                offset += tiffOffset;
-                                
-                                const entries = view.getUint16(offset, little);
-                                offset += 2;
-                                
-                                for (let i = 0; i < entries; i++) {
-                                    const tag = view.getUint16(offset, little);
-                                    offset += 2;
-                                    const type = view.getUint16(offset, little);
-                                    offset += 2;
-                                    const numValues = view.getUint32(offset, little);
-                                    offset += 4;
-                                    const valueOffset = view.getUint32(offset, little);
-                                    offset += 4;
-                                    
-                                    if (tag === 0x9003) {
-                                        const strOffset = offset - 4 + valueOffset;
-                                        let str = '';
-                                        for (let c = 0; c < 20; c++) {
-                                            const char = view.getUint8(strOffset + c);
-                                            if (char === 0) break;
-                                            str += String.fromCharCode(char);
-                                        }
-                                        exifData.DateTimeOriginal = str;
-                                        break;
-                                    }
+                            if (marker === 0xFFE1) { // APP1 Marker (donde suele estar EXIF)
+                                if (view.getUint32(offset + 2, false) !== 0x45786966) { // 'Exif' ASCII
+                                    offset += view.getUint16(offset, false);
+                                    continue;
                                 }
                                 
-                                return resolve(exifData);
+                                const little = view.getUint16(offset + 6, false) === 0x4949; // Byte order
+                                offset += view.getUint32(offset + 4, little); // Offset to IFD0
+                                
+                                const tags = view.getUint16(offset, little);
+                                offset += 2;
+                                
+                                for (let i = 0; i < tags; i++) {
+                                    const tag = view.getUint16(offset + (i * 12), little);
+                                    if (tag === 0x8769) { // ExifIFDPointer
+                                        const exifOffset = view.getUint32(offset + (i * 12) + 8, little);
+                                        const exifIFD = view.getUint16(exifOffset + 2, little);
+                                        
+                                        for (let j = 0; j < exifIFD; j++) {
+                                            const exifTag = view.getUint16(exifIFD + 4 + (j * 12), little);
+                                            if (exifTag === 0x9003) { // DateTimeOriginal
+                                                const valueOffset = view.getUint32(exifIFD + 4 + (j * 12) + 8, little);
+                                                const dateStringOffset = exifIFD + valueOffset;
+                                                
+                                                let dateStr = '';
+                                                for (let k = 0; k < 19; k++) {
+                                                    const charCode = view.getUint8(dateStringOffset + k);
+                                                    if (charCode === 0) break;
+                                                    dateStr += String.fromCharCode(charCode);
+                                                }
+                                                const formattedDateStr = dateStr.replace(/:(\d{2}):(\d{2}) /, '-$1-$2T') + 'Z';
+                                                const date = new Date(formattedDateStr.replace(/-/g, '/'));
+                                                return resolve(date);
+                                            }
+                                        }
+                                    }
+                                }
+                                return resolve(null);
                             } else {
                                 offset += view.getUint16(offset, false);
                             }
                         }
+                        return resolve(null);
                     } catch (e) {
-                        return reject(e);
+                        console.error(`Error al leer EXIF de ${file.name}:`, e);
+                        return resolve(null); // En caso de error, resuelve a null
                     }
-                    return resolve(null);
                 };
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file.slice(0, 128 * 1024));
+                reader.onerror = () => resolve(null); // En caso de error, resuelve a null
+                reader.readAsArrayBuffer(file.slice(0, 131072));
+                */
             });
         }
         
@@ -452,6 +762,9 @@
                 img.src = url;
             });
         }
+
+        // Inicializar el estado del botón al cargar la página
+        updateCreateButtonState();
     </script>
 </body>
 </html>
