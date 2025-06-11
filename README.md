@@ -1,2 +1,4 @@
 # Images-to-Stop-Motion
-some tools to convert a group of images to an stop motion video
+Some tools to convert a group of images to an stop motion video
+-  StopMotion_web.html local web version
+-  StopMotion_python.py python version
